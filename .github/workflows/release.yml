@@ -1,0 +1,118 @@
+name: Release binaries
+
+# Build ccminer-vips (htmlcoin/VIPSTARCOIN CUDA miner) binaries and attach them
+# to the GitHub Release for the pushed tag. ARM64 is intentionally not built:
+# the codebase relies on x86 SSE2/SSE4.1 intrinsics with no NEON fallback.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-x64:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential automake autoconf libtool pkg-config \
+            libcurl4-openssl-dev libssl-dev libjansson-dev libgmp-dev \
+            gcc-11 g++-11
+
+      - name: Install CUDA toolkit (12.8)
+        uses: Jimver/cuda-toolkit@v0.2.19
+        with:
+          cuda: '12.8.0'
+          method: 'network'
+          linux-local-args: '[]'
+
+      - name: Build
+        run: |
+          set -e
+          ./autogen.sh
+          CUDA_CFLAGS="-O3 -Xcompiler -Wall -D_FORCE_INLINES -ccbin g++-11" \
+            ./configure CC=gcc-11 CXX=g++-11 \
+              CXXFLAGS="-O3 -msse2 -mssse3 -msse4.1 -D_REENTRANT -falign-functions=16" \
+              LDFLAGS="-L${CUDA_PATH}/lib64/stubs" \
+              --with-cuda="${CUDA_PATH}" --with-nvml=libnvidia-ml.so
+          make -j"$(nproc)"
+          strip ccminer
+          mkdir -p dist
+          cp ccminer dist/ccminer-vips-linux-x64
+
+      - name: Package
+        run: |
+          cd dist
+          tar -czf ccminer-vips-linux-x64.tar.gz ccminer-vips-linux-x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccminer-vips-linux-x64
+          path: dist/ccminer-vips-linux-x64.tar.gz
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/ccminer-vips-linux-x64.tar.gz --clobber
+
+  windows-x64:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CUDA toolkit (12.8)
+        uses: Jimver/cuda-toolkit@v0.2.19
+        with:
+          cuda: '12.8.0'
+          method: 'network'
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Retarget VS project to installed VS2022 + CUDA 11.8
+        shell: pwsh
+        run: |
+          $cudaVer = '12.8'
+          $proj = 'ccminer.vcxproj'
+          $c = Get-Content $proj -Raw
+          # VS2013 (v120) -> VS2022 (v143)
+          $c = $c -replace '<PlatformToolset>v120</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>'
+          # CUDA 9.1 props/targets -> installed CUDA version (path is resolved via $(CudaToolkitDir) on modern integration)
+          $c = $c -replace 'CUDA 9\.1\.props', ("CUDA " + $cudaVer + ".props")
+          $c = $c -replace 'CUDA 9\.1\.targets', ("CUDA " + $cudaVer + ".targets")
+          $c = $c -replace 'CUDA\\v9\.1\\', ("CUDA\v" + $cudaVer + "\")
+          # CUDA 12 drops <=sm_50; 11.8 keeps them, but retarget codegen to Pascal..Ada anyway
+          $c = $c -replace 'compute_62,sm_62;compute_61,sm_61;compute_60,sm_60;compute_52,sm_52;compute_50,sm_50', 'compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_89,sm_89;compute_90,sm_90;compute_120,sm_120'
+          Set-Content $proj $c
+          Write-Host "Retargeted $proj"
+
+      - name: Build (MSBuild)
+        shell: pwsh
+        run: |
+          msbuild ccminer.sln /m /p:Configuration=Release /p:Platform=x64 /p:WindowsTargetPlatformVersion=10.0
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $exe = Get-ChildItem -Recurse -Filter ccminer.exe | Select-Object -First 1
+          Copy-Item $exe.FullName dist/ccminer-vips-windows-x64.exe
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path dist/ccminer-vips-windows-x64.exe -DestinationPath dist/ccminer-vips-windows-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccminer-vips-windows-x64
+          path: dist/ccminer-vips-windows-x64.zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$env:GITHUB_REF_NAME" dist/ccminer-vips-windows-x64.zip --clobber
