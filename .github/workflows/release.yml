@@ -92,6 +92,10 @@ jobs:
           # (Kepler), removed in CUDA 11.8. Bump to the lowest arch 11.8 still supports (sm_35);
           # its compute_35 PTX JITs forward to newer GPUs incl. Blackwell.
           $c = $c -replace '<CodeGeneration>compute_30,sm_30</CodeGeneration>', '<CodeGeneration>compute_35,sm_35</CodeGeneration>'
+          # Drop the original VS2013 post-build event (7za.exe packaging that also copies
+          # the VC120 CRT) — 7za isn't vendored and VC120 isn't installed, so it fails the
+          # build after the exe already linked. CI does its own packaging below.
+          $c = $c -replace '(?s)<PostBuildEvent>.*?</PostBuildEvent>', '<PostBuildEvent />'
           Set-Content $proj $c
           Write-Host "Retargeted $proj"
 
@@ -106,8 +110,9 @@ jobs:
         run: |
           msbuild ccminer.sln /m /p:Configuration=Release /p:Platform=x64
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $exe = Get-ChildItem -Recurse -Filter ccminer.exe | Select-Object -First 1
-          if (-not $exe) { throw "ccminer.exe not found" }
+          # TargetName is ccminer-$(PlatformShortName), i.e. the x64 build emits ccminer-x64.exe.
+          $exe = Get-ChildItem -Recurse -Filter ccminer-x64.exe | Select-Object -First 1
+          if (-not $exe) { throw "ccminer-x64.exe not found" }
           Copy-Item $exe.FullName dist/ccminer-vips-windows-x64.exe
           Compress-Archive -Path dist/ccminer-vips-windows-x64.exe -DestinationPath dist/ccminer-vips-windows-x64.zip -Force
 
