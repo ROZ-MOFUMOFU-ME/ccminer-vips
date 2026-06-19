@@ -113,15 +113,14 @@ endif
 #ccminer_LDADD += -lsodium
 ccminer_LDADD += -lcuda
 
-# Release binary: fat across major archs (Pascal->Ada) + compute_89 PTX.
+# Release binary: fat across Pascal->Hopper + compute_90 PTX (JITs to Blackwell/RTX50xx; CUDA 11.8 has no native sm_120).
 nvcc_ARCH  = -gencode=arch=compute_61,code=\"sm_61\"
 nvcc_ARCH += -gencode=arch=compute_70,code=\"sm_70\"
 nvcc_ARCH += -gencode=arch=compute_75,code=\"sm_75\"
 nvcc_ARCH += -gencode=arch=compute_80,code=\"sm_80\"
 nvcc_ARCH += -gencode=arch=compute_86,code=\"sm_86\"
 nvcc_ARCH += -gencode=arch=compute_89,code=\"sm_89\"
-nvcc_ARCH += -gencode=arch=compute_90,code=\"sm_90\"
-nvcc_ARCH += -gencode=arch=compute_120,code=\"sm_120,compute_120\"
+nvcc_ARCH += -gencode=arch=compute_90,code=\"sm_90,compute_90\"   # +PTX: JITs forward to Blackwell/RTX50xx
 
 nvcc_FLAGS = $(nvcc_ARCH) @CUDA_INCLUDES@ -I. @CUDA_CFLAGS@
 nvcc_FLAGS += $(JANSSON_INCLUDES) --ptxas-options="-v"
