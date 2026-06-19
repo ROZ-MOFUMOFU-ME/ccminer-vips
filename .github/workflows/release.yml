@@ -88,19 +88,21 @@ jobs:
           $c = $c -replace 'CUDA\\v9\.1\\', ("CUDA\v" + $cudaVer + "\")
           $arch = 'compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_89,sm_89;compute_90,sm_90;compute_90,compute_90'
           $c = $c -replace 'compute_62,sm_62;compute_61,sm_61;compute_60,sm_60;compute_52,sm_52;compute_50,sm_50', $arch
-          # equi/cuda_equi.cu has EMPTY per-file CodeGeneration overrides; an empty value makes
-          # nvcc fall back to its built-in default (compute_30 — removed in CUDA 11.8) and fail.
-          # Fill any whitespace-only CodeGeneration node with the explicit arch list.
-          $c = $c -replace '<CodeGeneration([^>]*)>\s*</CodeGeneration>', ('<CodeGeneration$1>' + $arch + '</CodeGeneration>')
+          # Legacy scrypt kernels (salsa/fermi/kepler/nv/test) pin per-file compute_30,sm_30
+          # (Kepler), removed in CUDA 11.8. Bump to the lowest arch 11.8 still supports (sm_35);
+          # its compute_35 PTX JITs forward to newer GPUs incl. Blackwell.
+          $c = $c -replace '<CodeGeneration>compute_30,sm_30</CodeGeneration>', '<CodeGeneration>compute_35,sm_35</CodeGeneration>'
           Set-Content $proj $c
           Write-Host "Retargeted $proj"
 
       - name: Build (MSBuild)
         shell: pwsh
         env:
-          # CUDA 11.8 nvcc rejects the runner's MSVC 14.4x (VS2022 17.14) host compiler;
-          # override the host-version check (the 2018 sources build fine with it).
-          NVCC_PREPEND_FLAGS: '-allow-unsupported-compiler'
+          # CUDA 11.8 nvcc rejects the runner's MSVC 14.4x (VS2022 17.14) host compiler:
+          # -allow-unsupported-compiler clears nvcc's own host_config.h check; the
+          # _ALLOW_COMPILER_AND_STL_VERSION_MISMATCH define clears MSVC STL's STL1002
+          # static_assert ("expected CUDA 12.4 or newer"). The 2018 sources build fine.
+          NVCC_PREPEND_FLAGS: '-allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH'
         run: |
           msbuild ccminer.sln /m /p:Configuration=Release /p:Platform=x64
           New-Item -ItemType Directory -Force -Path dist | Out-Null
