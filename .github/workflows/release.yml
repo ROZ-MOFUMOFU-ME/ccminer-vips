@@ -40,7 +40,7 @@ jobs:
           ./autogen.sh
           CUDA_CFLAGS="-O3 -Xcompiler -Wall -D_FORCE_INLINES -ccbin g++-11" \
             ./configure CC=gcc-11 CXX=g++-11 \
-              CXXFLAGS="-O3 -msse2 -mssse3 -msse4.1 -D_REENTRANT -falign-functions=16" \
+              CXXFLAGS="-O3 -std=gnu++14 -msse2 -mssse3 -msse4.1 -D_REENTRANT -falign-functions=16" \
               LDFLAGS="-L${CUDA_PATH}/lib64/stubs" \
               --with-cuda="${CUDA_PATH}" --with-nvml=libnvidia-ml.so
           make -j"$(nproc)"
@@ -65,6 +65,8 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install CUDA toolkit (11.8)
         uses: Jimver/cuda-toolkit@v0.2.35
