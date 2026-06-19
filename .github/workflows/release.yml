@@ -82,6 +82,7 @@ jobs:
           $proj = 'ccminer.vcxproj'
           $c = Get-Content $proj -Raw
           $c = $c -replace '<PlatformToolset>v120</PlatformToolset>', '<PlatformToolset>v143</PlatformToolset>'
+          $c = $c -replace '<WindowsTargetPlatformVersion>[^<]*</WindowsTargetPlatformVersion>', '<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>'
           $c = $c -replace 'CUDA 9\.1\.props', ("CUDA " + $cudaVer + ".props")
           $c = $c -replace 'CUDA 9\.1\.targets', ("CUDA " + $cudaVer + ".targets")
           $c = $c -replace 'CUDA\\v9\.1\\', ("CUDA\v" + $cudaVer + "\")
