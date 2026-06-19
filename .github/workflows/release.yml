@@ -86,12 +86,21 @@ jobs:
           $c = $c -replace 'CUDA 9\.1\.props', ("CUDA " + $cudaVer + ".props")
           $c = $c -replace 'CUDA 9\.1\.targets', ("CUDA " + $cudaVer + ".targets")
           $c = $c -replace 'CUDA\\v9\.1\\', ("CUDA\v" + $cudaVer + "\")
-          $c = $c -replace 'compute_62,sm_62;compute_61,sm_61;compute_60,sm_60;compute_52,sm_52;compute_50,sm_50', 'compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_89,sm_89;compute_90,sm_90;compute_90,compute_90'
+          $arch = 'compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_89,sm_89;compute_90,sm_90;compute_90,compute_90'
+          $c = $c -replace 'compute_62,sm_62;compute_61,sm_61;compute_60,sm_60;compute_52,sm_52;compute_50,sm_50', $arch
+          # equi/cuda_equi.cu has EMPTY per-file CodeGeneration overrides; an empty value makes
+          # nvcc fall back to its built-in default (compute_30 — removed in CUDA 11.8) and fail.
+          # Fill any whitespace-only CodeGeneration node with the explicit arch list.
+          $c = $c -replace '<CodeGeneration([^>]*)>\s*</CodeGeneration>', ('<CodeGeneration$1>' + $arch + '</CodeGeneration>')
           Set-Content $proj $c
           Write-Host "Retargeted $proj"
 
       - name: Build (MSBuild)
         shell: pwsh
+        env:
+          # CUDA 11.8 nvcc rejects the runner's MSVC 14.4x (VS2022 17.14) host compiler;
+          # override the host-version check (the 2018 sources build fine with it).
+          NVCC_PREPEND_FLAGS: '-allow-unsupported-compiler'
         run: |
           msbuild ccminer.sln /m /p:Configuration=Release /p:Platform=x64
           New-Item -ItemType Directory -Force -Path dist | Out-Null
