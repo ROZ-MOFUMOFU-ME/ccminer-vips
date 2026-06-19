@@ -51,6 +51,11 @@ using namespace Concurrency;
 #if _MSC_VER > 1800
 #undef _THROW1
 #define _THROW1(x) throw(std::bad_alloc)
+// _RAISE was an internal MSVC STL macro removed in newer toolsets (VS2022 14.4x);
+// map it back to a plain throw so the custom aligned operator new keeps working.
+#ifndef _RAISE
+#define _RAISE(x) throw (x)
+#endif
 #endif
 
 // A thin wrapper around the builtin __m128i type
