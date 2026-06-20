@@ -113,8 +113,19 @@ jobs:
           # TargetName is ccminer-$(PlatformShortName), i.e. the x64 build emits ccminer-x64.exe.
           $exe = Get-ChildItem -Recurse -Filter ccminer-x64.exe | Select-Object -First 1
           if (-not $exe) { throw "ccminer-x64.exe not found" }
-          Copy-Item $exe.FullName dist/ccminer-vips-windows-x64.exe
-          Compress-Archive -Path dist/ccminer-vips-windows-x64.exe -DestinationPath dist/ccminer-vips-windows-x64.zip -Force
+          # Ship the binary as ccminer-vips.exe and bundle ready-to-run launchers.
+          Copy-Item $exe.FullName dist/ccminer-vips.exe
+          Set-Content -Path dist/mine-pool.bat -Value @(
+            '@echo off',
+            'ccminer-vips.exe -a vipstar -o stratum+tcp://vips.mofumofu.me:3323 -u VFixsia2EstV4uEEigUXUrknDGsFeWyNhE',
+            'pause'
+          )
+          Set-Content -Path dist/mine-solo.bat -Value @(
+            '@echo off',
+            'ccminer-vips.exe -a vipstar -o http://127.0.0.1:31916 -u user -p pass --no-stratum',
+            'pause'
+          )
+          Compress-Archive -Path dist/ccminer-vips.exe, dist/mine-pool.bat, dist/mine-solo.bat -DestinationPath dist/ccminer-vips-windows-x64.zip -Force
 
       - uses: actions/upload-artifact@v4
         with:
