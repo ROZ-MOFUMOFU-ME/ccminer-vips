@@ -469,6 +469,12 @@ void sha256d_gpu_hash_shared_html(const uint32_t threads, const uint32_t startNo
 		s_K[threadIdx.x] = c_K[threadIdx.x];
 		s_end_64[threadIdx.x] = c_end_64[threadIdx.x];
 	}
+	// Shared K / end_64 are written by threads 0..63 and then read by ALL
+	// threads in the block; without a barrier, warps with independent thread
+	// scheduling (Volta+: Turing/Ampere/Ada/Blackwell) may read s_K/s_end_64
+	// before the writers finish, yielding an occasional wrong hash that fails
+	// the CPU re-check ("does not validate on CPU") and can drop real shares.
+	__syncthreads();
 
 	if (thread < threads)
 	{
@@ -523,6 +529,9 @@ void sha256d_gpu_hash_shared(const uint32_t threads, const uint32_t startNonce, 
 	__shared__ uint32_t s_K[64*4];
 	//s_K[thread & 63] = c_K[thread & 63];
 	if (threadIdx.x < 64U) s_K[threadIdx.x] = c_K[threadIdx.x];
+	// Barrier before all threads read shared s_K (see the html kernel above):
+	// required for correctness on Volta+ independent thread scheduling.
+	__syncthreads();
 
 	if (thread < threads)
 	{
