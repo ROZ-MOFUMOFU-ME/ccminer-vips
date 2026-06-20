@@ -1494,6 +1494,17 @@ static bool stratum_notify(struct stratum_ctx *sctx, json_t *params)
 		goto out;
 	}
 
+	// html/vipstar carry hashstateroot+hashutxoroot before the clean flag. If a
+	// job arrives without them (e.g. the pool fell back to a non-vipstar notify)
+	// these are NULL — skip the job instead of dereferencing NULL in hex2bin
+	// below, which crashed the miner (access violation) intermittently.
+	if ((!strcasecmp(algo, "html") || !strcasecmp(algo, "vipstar")) &&
+		(!hashstateroot || !hashutxoroot ||
+		 strlen(hashstateroot) != 64 || strlen(hashutxoroot) != 64)) {
+		applog(LOG_ERR, "Stratum notify: missing hashstateroot/hashutxoroot (html/vipstar)");
+		goto out;
+	}
+
 	/* store stratum server time diff */
 	hex2bin((uchar *)&ntime, stime, 4);
 	ntime = swab32(ntime) - (uint32_t)time(0);
