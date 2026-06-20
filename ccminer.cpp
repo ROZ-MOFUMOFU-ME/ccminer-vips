@@ -3918,7 +3918,7 @@ int main(int argc, char *argv[])
 	// get opt_quiet early
 	parse_single_opt('q', argc, argv);
 
-	printf("*** ccminer-htmlcoin " PACKAGE_VERSION " for nVidia GPUs by mghtthr ***\n");
+	printf("*** ccminer-vips " PACKAGE_VERSION " for nVidia GPUs by ROZ ***\n");
 	if (!opt_quiet) {
 		const char* arch = is_x64() ? "64-bits" : "32-bits";
 #ifdef _MSC_VER
@@ -3929,7 +3929,7 @@ int main(int argc, char *argv[])
 			CUDART_VERSION/1000, (CUDART_VERSION % 1000)/10, arch);
 		printf("  Originally based on tpruvot fork of Christian Buchner and Christian H. project and gelotus repo.\n");
 		printf("  Include some kernels from alexis78, djm34, djEzo, tsiv and krnlx.\n\n");
-		printf("HTMLCOIN donation address: Hjyo3KdT7qnRHtF5WQQwU9ppUe6LwN6UoZ (mghtthr)\n\n");
+		printf("VIPSTARCOIN donation address: VFixsia2EstV4uEEigUXUrknDGsFeWyNhE (ROZ)\n\n");
 	}
 
 	rpc_user = strdup("");
