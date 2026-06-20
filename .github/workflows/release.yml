@@ -48,7 +48,7 @@ jobs:
           mkdir -p dist
           # Ship the binary as ccminer-vips and bundle ready-to-run launchers.
           cp ccminer dist/ccminer-vips
-          printf '#!/bin/sh\n./ccminer-vips -a vipstar -o stratum+tcp://vips.mofumofu.me:3323 -u VFixsia2EstV4uEEigUXUrknDGsFeWyNhE\n' > dist/mine-pool.sh
+          printf '#!/bin/sh\n./ccminer-vips -a vipstar -o stratum+tcp://vips.mofumofu.me:3333 -u VFixsia2EstV4uEEigUXUrknDGsFeWyNhE\n' > dist/mine-pool.sh
           printf '#!/bin/sh\n./ccminer-vips -a vipstar -o http://127.0.0.1:31916 -u user -p pass --no-stratum\n' > dist/mine-solo.sh
           chmod +x dist/ccminer-vips dist/mine-pool.sh dist/mine-solo.sh
           tar -czf dist/ccminer-vips-linux-x64.tar.gz -C dist ccminer-vips mine-pool.sh mine-solo.sh
@@ -121,7 +121,7 @@ jobs:
           Copy-Item $exe.FullName dist/ccminer-vips.exe
           Set-Content -Path dist/mine-pool.bat -Value @(
             '@echo off',
-            'ccminer-vips.exe -a vipstar -o stratum+tcp://vips.mofumofu.me:3323 -u VFixsia2EstV4uEEigUXUrknDGsFeWyNhE',
+            'ccminer-vips.exe -a vipstar -o stratum+tcp://vips.mofumofu.me:3333 -u VFixsia2EstV4uEEigUXUrknDGsFeWyNhE',
             'pause'
           )
           Set-Content -Path dist/mine-solo.bat -Value @(
