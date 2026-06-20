@@ -3928,7 +3928,8 @@ int main(int argc, char *argv[])
 #endif
 			CUDART_VERSION/1000, (CUDART_VERSION % 1000)/10, arch);
 		printf("  Originally based on tpruvot fork of Christian Buchner and Christian H. project and gelotus repo.\n");
-		printf("  Include some kernels from alexis78, djm34, djEzo, tsiv and krnlx.\n\n");
+		printf("  Include some kernels from alexis78, djm34, djEzo, tsiv and krnlx.\n");
+		printf("  VIPSTARCOIN/HTMLCOIN (vipstar) support based on nannan7's ccminer-htmlcoin.\n\n");
 		printf("VIPSTARCOIN donation address: VFixsia2EstV4uEEigUXUrknDGsFeWyNhE (ROZ)\n\n");
 	}
 
