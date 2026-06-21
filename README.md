@@ -14,11 +14,11 @@ How to use
 ------------------------------
 
 run the following command for solo mining  
-ccminer -a vipstar -o http://127.0.0.1:PORT/ -u USERNAME -p PASSWORD
+ccminer-vips -a vipstar -o http://127.0.0.1:PORT/ -u USERNAME -p PASSWORD
 
 
 run the following command for pool mining  
-ccminer -a vipstar -o stratum+tcp://POOLADDRESS:PORT -u USERNAME.WORKERNAME -p PASSWORD
+ccminer-vips -a vipstar -o stratum+tcp://POOLADDRESS:PORT -u USERNAME.WORKERNAME -p PASSWORD
 
 # Building
 
